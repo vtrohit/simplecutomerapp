@@ -23,7 +23,7 @@ node {
     stage('Deploy on Tomcat') {
         withCredentials([usernamePassword(credentialsId: 'tomcat-credentials', usernameVariable: 'TOM_USER', passwordVariable: 'TOM_PASS')]) {
             sh """
-                curl --fail --silent --show-error --upload-file target/SimpleCustomerApp-1.0-SNAPSHOT.war \
+                curl --fail --silent --show-error --upload-file target/SimpleCustomerApp-${BUILD_NUMBER}-SNAPSHOT.war \
                 "http://$TOM_USER:$TOM_PASS@54.241.134.7:9090/manager/text/deploy?path=/customerapp&update=true"
             """
         }
