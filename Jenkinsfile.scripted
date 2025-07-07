@@ -1,0 +1,37 @@
+node {
+    stage('Git Clone') {
+        checkout([$class: 'GitSCM',
+                  branches: [[name: '*/feature-1.1']],
+                  userRemoteConfigs: [[url: 'https://github.com/vtrohit/simplecutomerapp.git']]])
+    }
+
+    stage('SonarQube Integration') {
+        withSonarQubeEnv('My SonarQube Server') {
+            sh 'mvn clean verify sonar:sonar'
+        }
+    }
+
+    stage('Maven Compilation') {
+        sh 'mvn clean package'
+    }
+
+    stage('Nexus Artifactory') {
+        echo '📦 Nexus upload logic goes here'
+        // Example: mvn deploy or curl command
+    }
+
+    stage('Deploy on Tomcat') {
+        withCredentials([usernamePassword(credentialsId: 'tomcat-credentials', usernameVariable: 'TOM_USER', passwordVariable: 'TOM_PASS')]) {
+            sh """
+                curl --fail --silent --show-error --upload-file target/SimpleCustomerApp-1.0-SNAPSHOT.war \
+                "http://$TOM_USER:$TOM_PASS@54.241.134.7:9090/manager/text/deploy?path=/customerapp&update=true"
+            """
+        }
+    }
+
+    stage('Slack Notification') {
+        slackSend channel: '#jenkins-integration',
+                  message: "✅ Scripted pipeline *SUCCESS* for ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                  color: 'good'
+    }
+}
